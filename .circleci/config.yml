@@ -1,0 +1,57 @@
+---
+version: 2.1
+
+jobs:
+  create_infrastructure:
+    docker:
+      - image: amazon/aws-cli
+    steps:
+      - checkout
+      - run:
+          name: create aws infrastructure
+          command: |
+              aws cloudformation deploy \
+                 --stack-name myStack-${CIRCLE_WORKFLOW_ID:0:5} \
+                 --template-file template.yml
+
+  # Exercise: Sharing Files (Job names may have changed)
+  # upload_file:
+  #   docker:
+  #     - image: circleci/node:13.8.0
+  #   steps:
+  #     - run: echo "THIS IS A SAMPLE TEXT" > ~/output.txt  
+  #     - persist_to_workspace:
+  #         root: ~/
+  #         paths: 
+  #           - output.txt  
+
+  # download_file:
+  #   docker:
+  #     - image: circleci/node:13.8.0
+  #   steps:
+  #     - attach_workspace:
+  #         at: ~/
+  #     - run: cat ~/output.txt
+
+  configure_infrastructure:
+    docker:
+      - image: python:3.7-alpine3.11
+    steps:
+      - checkout
+      - add_ssh_keys:
+          fingerprints: ["0d:eb:e0:cf:5f:70:c2:ec:22:54:e8:1c:a1:84:0c:6c"]
+      - run:
+          name: install ansible
+          command: apk add --update ansible
+# Why e no dey work
+      - run:
+          name: run playbook and configure server
+          command: ansible-playbook -i inventory.txt main.yml
+
+
+workflows:
+  myworkflow:
+    jobs:
+      # - create_infrastructure
+      - configure_infrastructure
+
